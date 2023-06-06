@@ -2,6 +2,7 @@ package com.app.weatherinfo.weather.view
 
 import android.os.Bundle
 import android.text.TextUtils
+import android.transition.Visibility
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -12,10 +13,12 @@ import androidx.core.widget.doOnTextChanged
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
+import androidx.navigation.fragment.findNavController
 import com.app.weatherinfo.R
 import com.app.weatherinfo.api.Status
 import com.app.weatherinfo.databinding.FragmentSearchBinding
 import com.app.weatherinfo.databinding.FragmentSplashBinding
+import com.app.weatherinfo.weather.model.WeatherResponse
 import com.app.weatherinfo.weather.viewmodel.WeatherViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -45,12 +48,20 @@ class SearchFragment : Fragment() {
         binding.btnSearch.setOnClickListener {
             validate()
         }
+        binding.btnDismiss.setOnClickListener {
+            binding.searchView.visibility = View.VISIBLE
+            binding.detailsView.visibility = View.GONE
+        }
     }
 
     private fun setObserver() {
         weatherViewModel.weatherInfoLiveData.observe(viewLifecycleOwner, Observer {
             when (it.status) {
-                Status.SUCCESS -> Toast.makeText(context, "Success", Toast.LENGTH_SHORT).show()
+                Status.SUCCESS -> {
+                    Toast.makeText(context, "Success", Toast.LENGTH_SHORT).show()
+                    populateData(it.data)
+                }
+
                 Status.ERROR -> Toast.makeText(context, "city not found", Toast.LENGTH_SHORT).show()
                 Status.LOADING -> Toast.makeText(context, "Loading", Toast.LENGTH_SHORT).show()
                 Status.COMPLETED -> Toast.makeText(context, "Completed", Toast.LENGTH_SHORT).show()
@@ -67,4 +78,17 @@ class SearchFragment : Fragment() {
             weatherViewModel.getWeatherInfo(name.toString())
         }
     }
+
+    private fun populateData(weatherResponse: WeatherResponse?) {
+        binding.searchView.visibility = View.GONE
+        binding.detailsView.visibility = View.VISIBLE
+        weatherResponse.let {
+
+            binding.tvCity.text = it!!.name
+            binding.tvDescription.text = it.weather[0].description
+            binding.tvCountry.text = it.sys.country
+        }
+    }
+
+
 }
